@@ -1,0 +1,531 @@
+<template>
+
+	<div topmargin="0" leftmargin="0" rightmargin="0" style="height: 600px;">
+		<div class="sign-titleBar">
+			<div class="leftDiv" v-on:click="gotoMainView">
+				<img class="leftImg" src="../assets/images/title_arrow_left_black.png" />
+			</div>
+			<div class="centerDiv">
+				<span class="titleName">月贡献排行榜</span>
+			</div>
+			<div class="rightDiv" v-on:click="gotoCollectHistory">
+				<span class="titleName">收集记录</span>
+			</div>
+		</div>
+		<div style="height: 300px;width: 100%;position: absolute;">
+			<!--<div style="background-color: white; z-index: 1; width: 100%;height: 300px;position:  absolute;top: 0px;">
+
+			</div>-->
+			<div style="height: 300px;overflow: hidden; position: relative;">
+				<div class="backgroundView">
+				</div>
+			</div>
+
+			<!--<canvas id="myCanvas" width="300px" height="150px" style="z-index: 5;"></canvas>-->
+			<div class="titleImg" style="text-align: center;">
+				<img :src="topUser.userIconPath" id="theOne" />
+			</div>
+
+			<div class="firstNumber">
+				<img src="../../static/img/NumberOneTip.png" id="firstTipImg" />
+			</div>
+			<div class="firstShowchach">
+				<img src="../../static/img/crown.png" id="Showchach" />
+			</div>
+			<div class="firstShowYellow" style="text-align: center;">
+				<img src="../../static/img/scrollYellow.png" id="ShowYellow" />
+				<div class="firstUsername">{{topUser.userName}}</div>
+			</div>
+			<div class="firstShowEnergy">
+				<span class="firstelecImg">
+					<img src="../../static/img/elecTip.png" id="firstelecTipImg" />
+				</span>
+
+				<span class="firstnumOfElec">
+					{{topUser.AllValleyEnergy}}g
+				</span>
+			</div>
+		</div>
+
+		<div class="list-wrapper list-wrapper-hook" id="downDiv">
+			<div class="sperateView">
+			</div>
+			<div>
+				<!-- 列表  -->
+				<ul v-if="!netError">
+					<li class="tableView-cell-noBorder">
+						<div class="userInfo">
+							<div class="NumberOfList">
+								<div class="showNumber">NO.{{rank}}</div>
+							</div>
+							<div class="selfTitleImage">
+								<img :src="this.userIconPath" id="theShow" />
+							</div>
+							<div class="selfName">
+								{{userName}}
+							</div>
+
+							<div class="elecImg">
+								<img src="../../static/img/elecTip.png" id="elecTipImg" />
+							</div>
+
+							<div class="numOfElec">
+								{{AllValleyEnergy}}g
+							</div>
+						</div>
+					</li>
+					<div class="sperateLine">
+					</div>
+					<li class="tableView-cell" v-for="(item,itemIndex) in topUserList">
+						<div class="userInfo">
+							<div class="NumberOfList">
+								<div class="showNumber">NO.{{itemIndex+2}}</div>
+							</div>
+							<div class="selfTitleImage">
+								<img :src=item.userIconPath id="theShow" />
+							</div>
+							<div class="selfName">
+								{{item.userName}}
+							</div>
+
+							<div class="elecImg">
+								<img src="../../static/img/elecTip.png" id="elecTipImg" />
+							</div>
+
+							<div class="numOfElec">
+								{{item.AllValleyEnergy}}g
+							</div>
+						</div>
+					</li>
+
+				</ul>
+				<!-- 网络异常的显示 -->
+				<div class="currentActivity" style="text-align: center; margin-top: 30px;" v-if="netError">
+					<div>
+						<img src="../assets/img/404.png"></img>
+						<br/>
+						<label style="color: lightgray; font-weight: 300; margin-bottom: 10px;">当前网络较差，请重新加载</label>
+					</div>
+				</div>
+			</div>
+			<!--<div class="sperateView">
+					</div>-->
+
+		</div>
+	</div>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				"topUserList": [],
+				"AllValleyEnergy": "",
+				"rank": "",
+				"userName": "",
+				"topUser": {},
+				"userIconPath": "",
+				netError: false,
+				isFisrtError:false
+			}
+		},
+		mounted() {
+			this.getData();
+
+			//			var canvas = document.getElementById("myCanvas");
+			//			var windows = document.getElementById("windiow");
+			//
+			//			window.addEventListener("resize", resizeCanvas, false);
+			//
+			//			function resizeCanvas() {
+			//				w = canvas.width = windows.width;
+			//				h = canvas.height = windows.height;
+			//			}
+			//设置自适应高度
+			var height = window.screen.height - 320;
+			$("#downDiv").css("height", height+"px"); //通过设置CSS属性来设置元素的高
+			$("#downDiv").css("overflow-y", "auto");
+			$("#downDiv").css("overflow-x", "hidden");
+			//			stackBlurImage( "theOne", "myCanvas", 15, 1 ); 
+
+			//			var oDiv = document.getElementById('downDiv');
+			//			alert(oDiv.offsetHeight); //这个就是获取DIV的高度
+
+			//			oDiv.style.height = document.body.offsetHeight*30% + 100 + 'px';
+		},
+		methods: {
+			Fuzzy() {
+				var c = document.getElementById("myCanvas");
+				var ctx = c.getContext("2d");
+				var imgData = ctx.getImageData(0, 0, c.width, c.height);
+				var img_w = imgData.width;
+				var img_h = imgData.height;
+
+				for(var w = 1; w < (img_w - 1); w++) {
+					for(var h = 1; h < (img_h - 1); h++) {
+						//起始点
+						var i = (w + img_w * h) * 4;
+						var R = imgData.data[i - 1604] + imgData.data[i - 1600] + imgData.data[i - 1596] + imgData.data[i - 4] + imgData.data[i] +
+							imgData.data[i + 4] + imgData.data[i + 1596] + imgData.data[i + 1600] + imgData.data[i + 1604]; //R(0-255)
+						var G = imgData.data[i - 1603] + imgData.data[i - 1599] + imgData.data[i - 1595] + imgData.data[i - 3] + imgData.data[i + 1] +
+							imgData.data[i + 5] + imgData.data[i + 1597] + imgData.data[i + 1601] + imgData.data[i + 1605]; //G(0-255)
+						var B = imgData.data[i - 1602] + imgData.data[i - 1598] + imgData.data[i - 1594] + imgData.data[i - 2] + imgData.data[i + 2] +
+							imgData.data[i + 6] + imgData.data[i + 1598] + imgData.data[i + 1602] + imgData.data[i + 1606];; //G(0-255)
+						var Alpha = imgData.data[i + 3]; //Alpha(0-255)
+
+						imgData.data[i] = R / 9;
+						imgData.data[i + 1] = G / 9;
+						imgData.data[i + 2] = B / 9;
+						imgData.data[i + 3] = Alpha;
+					}
+				}
+				ctx.putImageData(imgData, 0, 0);
+			},
+			gotoMainView: function() {
+				this.$router.push({
+					path: '/MainView'
+				})
+			},
+			gotoCollectHistory: function() {
+			if (this.isFisrtError){
+					alertLoadError(this);
+					return
+				}
+				this.$router.push({
+					name: 'collectHistory',
+				})
+			},
+			getData() {
+				var self = this;
+				ajaxRequest({
+					url: 'getMonthContributionRank',
+					data: {
+						"userId": "1419",
+					},
+					async: true,
+					success: function(dataJson) {
+//						alert(JSON.stringify(dataJson.result));
+						self.rank = dataJson.result.rank;
+						self.userName = dataJson.result.userName;
+//						alert(dataJson.result.userId);
+						self.topUser = dataJson.result.topUser;
+						self.AllValleyEnergy = dataJson.result.AllValleyEnergy;
+						self.topUserList = dataJson.result.topUserList;
+						self.userIconPath = dataJson.result.userIconPath;
+						$(".backgroundView").css("background", 'url(' + self.topUser.userIconPath + ') no-repeat center');
+						$(".backgroundView").css("background-size", '100% 125%');
+						$(".backgroundToBack").css("background", 'url(' + self.topUser.userIconPath + ') no-repeat center');
+						$(".backgroundToBack").css("background-size", '100% 125%');
+						if(self.userIconPath == "") {
+							self.netError = true;
+							$(".backgroundView").css("background", 'url(../../static/img/defaultBackground.png) no-repeat center');
+							$(".backgroundView").css("background-size", '100% 125%');
+							$(".backgroundToBack").css("background", 'url(../../static/img/defaultBackground.png) no-repeat center');
+							$(".backgroundToBack").css("background-size", '100% 125%');
+						}
+						self.Fuzzy();
+						self.isFisrtError = false;
+					},
+					error: function() {
+						self.netError = true;
+						self.isFisrtError = true;
+						alertSysErrorTip(self);
+					}
+				});
+			}
+		}
+	}
+</script>
+
+<style scoped="yes">
+	* {
+		padding: 0;
+		margin: 0;
+	}
+	
+	.backgroundView {
+		width: 140%;
+		height: 420px;
+		background: white center;
+		filter: blur(8px);
+		background-size: 100% 140%;
+		/*margin-top: 0px;*/
+		margin: -20%;
+		/*设置图层位置*/
+		position: absolute;
+		z-index: 3;
+	}
+	
+	.backgroundToBack {
+		width: 100%;
+		height: 300px;
+		background: white center;
+		filter: blur(1px);
+		background-size: 100% 140%;
+		position: absolute;
+		z-index: 2;
+		margin-top: 0px;
+	}
+	
+	#theOne {
+		/*position: absolute;*/
+		/*width: 30%;
+		height: 30%;*/
+		left: 0px;
+		width: 150px;
+		height: 150px;
+		border-radius: 75px;
+	}
+	
+	.titleImg {
+		/*margin-left: 35%;*/
+		width: 100%;
+		height: 150px;
+		top: 70px;
+		/*margin-top: -500px;*/
+		position: absolute;
+		z-index: 3;
+	}
+	
+	.firstNumber {
+		margin-top: 0px;
+		position: absolute;
+		z-index: 4;
+		top: 150px;
+		margin-left: 0%;
+	}
+	
+	#firstTipImg {
+		width: 80px;
+	}
+	
+	.tableView-cell {
+		width: calc(100% - 30px);
+		height: 70px;
+		/*margin-left: -30px;*/
+		list-style-type: none;
+		/*设置下边框样式*/
+		border-bottom-style: solid;
+		border-bottom-width: 1px;
+		border-bottom-color: #D3D3D3;
+	}
+	
+	.tableView-cell-noBorder {
+		width: calc(100% - 30px);
+		height: 70px;
+		/*margin-left: -30px;*/
+		list-style-type: none;
+	}
+	
+	.userInfo {
+		position: relative;
+		height: 70px;
+		margin-top: 0px;
+	}
+	
+	.NumberOfList {
+		width: 15%;
+		height: 70px;
+	}
+	
+	.showNumber {
+		padding-left: 10px;
+		padding-top: 25px;
+		font: "微软雅黑";
+		font-size: 20px;
+		color: darkorange;
+		text-align: left;
+		vertical-align: middle;
+	}
+	
+	.firstShowchach {
+		position: absolute;
+		top: 40px;
+		width: 100%;
+		text-align: center;
+		z-index: 5;
+		/*margin-left: -30%;
+		margin-top: -135px;*/
+	}
+	
+	#Showchach {
+		margin-right: 100px;
+		width: 70px;
+		height: 80px;
+	}
+	
+	.firstShowYellow {
+		position: absolute;
+		width: 100%;
+		z-index: 6;
+		top: 180px;
+	}
+	
+	.firstShowEnergy {
+		position: absolute;
+		width: 100%;
+		z-index: 6;
+		top: 245px;
+		height: 40px;
+		text-align: center;
+	}
+	
+	.firstelecImg {
+		width: 40%;
+		text-align: right;
+		height: 40px;
+		
+	}
+	
+	#firstelecTipImg {
+		/*margin-right: 80px;*/
+		width: 40px;
+		height: 40px;
+		margin-top: -12px;
+	}
+	
+	.firstnumOfElec {
+		/*margin-top: -43px;*/
+		/*margin-left: 40px;*/
+		width: 40%;
+		text-align: left
+		;
+		font: "微软雅黑";
+		font-size: 30px;
+		color: #FF8C00;
+	}
+	
+	#ShowYellow {
+		width: 300px;
+	}
+	
+	.firstUsername {
+		width: 100%;
+		text-align: center;
+		font-size: 18px;
+		color: white;
+		margin-top: -25px;
+	}
+	
+	.selfTitleImage {
+		position: absolute;
+		width: 60px;
+		height: 60px;
+		left: 100px;
+		top: 5px;
+	}
+	
+	.selfName {
+		position: absolute;
+		font: "微软雅黑";
+		font-size: 20px;
+		left: 200px;
+		top: 10px;
+		/*margin-top: -60px;*/
+	}
+	
+	.elecImg {
+		position: absolute;
+		width: 20px;
+		height: 20px;
+		top: 43px;
+		left: 200px;
+		/*padding-left: 51%;*/
+		/*margin-top: 5px;*/
+	}
+	
+	#elecTipImg {
+		width: 20px;
+		height: 20px;
+	}
+	
+	.numOfElec {
+		position: absolute;
+		font: "微软雅黑";
+		font-size: 18px;
+		color: #FF8C00;
+		left: 230px;
+		top: 40px;
+	}
+	
+	#theShow {
+		position: absolute;
+		top: 0px;
+		width: 60px;
+		height: 60px;
+		border-radius: 50px;
+	}
+	
+	.sperateView {
+		/*margin-top: 40px;*/
+		width: 110%;
+		height: 1px;
+		background-color: #F3F3F3;
+		margin-left: 0%;
+	}
+	
+	.sperateLine {
+		/*margin-top: 40px;*/
+		/*width: 130%;*/
+		height: 30px;
+		margin-top: 10px;
+		background-color: #F3F3F3;
+		/*margin-left: -30%;*/
+	}
+	
+	.list-wrapper {
+		position: absolute;
+		top: 300px;
+		z-index: 0;
+		/*height: calc(100% - 300px);*/
+		margin-top: 0px;
+		margin-left: 0px;
+		/*overflow-y: auto;*/
+		width: 100%;
+	}
+	/*标题栏*/
+	
+	.sign-titleBar {
+		height: 44px;
+		width: 100%;
+		position: fixed;
+		top: 0;
+		/*background: /*#1cbafb*/
+		;
+		display: flex;
+		flex-direction: row;
+		z-index: 1000;
+	}
+	
+	.leftDiv {
+		width: 30%;
+		height: 100%;
+		text-align: left;
+	}
+	
+	.leftImg {
+		height: 24px;
+		width: 24px;
+		margin-left: 13px;
+		margin-top: 10px;
+	}
+	
+	.centerDiv {
+		width: 40%;
+		height: 100%;
+		text-align: center;
+	}
+	
+	.titleName {
+		height: 100%;
+		line-height: 44px;
+		color: black;
+		font-size: 17px;
+	}
+	
+	.rightDiv {
+		width: 30%;
+		height: 100%;
+		text-align: right;
+	}
+</style>
